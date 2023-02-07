@@ -20,3 +20,5 @@ plt.plot(x, y_L, label='L(x)')
 plt.plot(x, y_Q, label='Q(x)')
 plt.legend()
 plt.show()
+
+
