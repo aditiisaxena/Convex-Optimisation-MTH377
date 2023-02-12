@@ -1,23 +1,32 @@
 import numpy as np
+import numdifftools as nd
 
-def f(x, y):
-    return (x**2 - 3*y**2)**2 + np.sin(x**2 + y**2)**2
+def f(var):
+    return (var[0]**2 - 3*var[1]**2)**2 + (np.sin(var[0]**2 + var[1]**2))**2
 
-def grad_f(x, y):
-    grad_x = 4*x*(x**2 - 3*y**2) + 2*np.sin(x**2 + y**2)*np.cos(x**2 + y**2)*2*x
-    grad_y = -6*y*(x**2 - 3*y**2) + 2*np.sin(x**2 + y**2)*np.cos(x**2 + y**2)*2*y
-    return grad_x, grad_y
+def lineSearchSubroutine(f, x, d, beta=0.5, alpha=0.1):
+    x0 = x
+    t = 1
+    gradient = nd.Gradient(f)
+    while f(x0) - f(x0 + t * d) < -t*alpha*nd.directionaldiff(f, x0, d):
+        t = beta*t
+    return t
 
-def gradient_descent(x0, y0, learning_rate=0.1, num_iterations=100):
-    x = x0
-    y = y0
-    for i in range(num_iterations):
-        grad_x, grad_y = grad_f(x, y)
-        x = x - learning_rate * grad_x
-        y = y - learning_rate * grad_y
-    return x, y
+def combinationDescent(f, x, tolerance):
+    gradient = nd.Gradient(f)
+    x0 = x
+    while np.linalg.norm(gradient(x0)) > tolerance:
+        hessian = nd.Hessian(f)
+        evals , evecs = np.linalg.eig(hessian(x0))
+        test_evals = evals >0
+        if np . all( test_evals ) == True :
+            d = np.linalg.inv(hessian(x0))@(-gradient(x0))
+        else :
+            d = -gradient(x0)
+        t = lineSearchSubroutine(f, x0, d)
+        x0 = x0 + t*d
+    return x0
 
-x0, y0 = 1, 1
-x_min, y_min = gradient_descent(x0, y0)
-print(f"Minimum at: x={x_min:.3f}, y={y_min:.3f}")
-print(f"Minimum value: f(x, y)={f(x_min, y_min):.3f}")
+x = np.array([1.0, 1.0])
+tolerance = 1e-6
+print(combinationDescent(f, x, tolerance))
